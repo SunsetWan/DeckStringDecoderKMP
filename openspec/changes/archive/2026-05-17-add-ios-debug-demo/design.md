@@ -18,11 +18,12 @@
 ```text
 ios_debug_demo/
 ├── README.md
-├── DeckStringDecoderKMPDebugDemo.xcodeproj/
 └── DeckStringDecoderKMPDebugDemo/
-    ├── DeckStringDecoderKMPDebugDemoApp.swift
-    ├── ContentView.swift
-    └── Assets.xcassets/
+    ├── DeckStringDecoderKMPDebugDemo.xcodeproj/
+    └── DeckStringDecoderKMPDebugDemo/
+        ├── DeckStringDecoderKMPDebugDemoApp.swift
+        ├── ContentView.swift
+        └── Assets.xcassets/
 ```
 
 `ios_debug_demo/` 位于 KMP source repo 根目录下。Xcode project 直接提交到仓库，保证开发者可以用 Xcode 打开并运行；不要求通过 public SwiftPM package resolve binary dependency。
@@ -42,11 +43,11 @@ ios_debug_demo/
 
 ```sh
 export JAVA_HOME="${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}"
-cd "${SRCROOT}/.."
+cd "${SRCROOT}/../.."
 ./gradlew :deckstring:embedAndSignAppleFrameworkForXcode --console=plain
 ```
 
-这里假设 `.xcodeproj` 位于 `ios_debug_demo/`，因此 `${SRCROOT}/..` 是 repo root。`embedAndSignAppleFrameworkForXcode` 由 Xcode 注入的 SDK、ARCHS、CONFIGURATION 等环境变量决定实际生成 simulator/device framework；Debug 调试路径必须优先使用 simulator。
+这里 `.xcodeproj` 位于 `ios_debug_demo/DeckStringDecoderKMPDebugDemo/`，因此 `${SRCROOT}/../..` 是 repo root。`embedAndSignAppleFrameworkForXcode` 由 Xcode 注入的 SDK、ARCHS、CONFIGURATION 等环境变量决定实际生成 simulator/device framework；Debug 调试路径必须优先使用 simulator。
 
 ## Demo Behavior
 
@@ -71,7 +72,7 @@ consumer code 不应直接引用 Kotlin/Native bridge 类型，例如 `KmpDeck`�
 
 推荐调试步骤：
 
-1. 用 Xcode 打开 `ios_debug_demo/DeckStringDecoderKMPDebugDemo.xcodeproj`。
+1. 用 Xcode 打开 `ios_debug_demo/DeckStringDecoderKMPDebugDemo/DeckStringDecoderKMPDebugDemo.xcodeproj`。
 2. 选择 Debug configuration 和 iOS Simulator destination。
 3. 在 `deckstring/src/commonMain/kotlin/com/sunsetwan/deckstring/DeckStringCore.kt` 中设置断点，优先选择 `DeckStringCodecBridge.decode` 或 `DeckStringCodecBridge.encode`。
 4. 运行 app，触发 demo UI 中的 decode / encode / invalid input 操作。

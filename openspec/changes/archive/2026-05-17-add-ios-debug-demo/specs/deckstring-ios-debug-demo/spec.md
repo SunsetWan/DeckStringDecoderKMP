@@ -31,7 +31,7 @@
 - **WHEN** `DeckStringDecoderKMPDebugDemo` build phases 被检查
 - **THEN** Run Script build phase SHALL 位于 `Compile Sources` 前
 - **THEN** Run Script SHALL 调用 `./gradlew :deckstring:embedAndSignAppleFrameworkForXcode --console=plain`
-- **THEN** Run Script SHALL 从 `ios_debug_demo/` 回到 repo root 后运行 Gradle
+- **THEN** Run Script SHALL 从 `ios_debug_demo/DeckStringDecoderKMPDebugDemo/` 回到 repo root 后运行 Gradle
 
 #### Scenario: Java and script sandbox requirements are documented
 - **WHEN** Run Script 运行 Gradle

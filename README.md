@@ -46,6 +46,14 @@ cd /Users/sunset/HS_APP/DeckStringDecoderKMP
 
 用于在 iOS demo 中触发 Swift-facing API，并断点进入 Kotlin/Native 代码。
 
+固定位置：`DeckStringDecoderKMP/ios_debug_demo/DeckStringDecoderKMPDebugDemo`
+
+打开工程：
+
+```sh
+open ios_debug_demo/DeckStringDecoderKMPDebugDemo/DeckStringDecoderKMPDebugDemo.xcodeproj
+```
+
 它基于“本地 KMP 源码联调”方式，额外要求：
 
 - Xcode Build Settings 设置 `KOTLIN_FRAMEWORK_BUILD_TYPE=Debug`
@@ -53,6 +61,8 @@ cd /Users/sunset/HS_APP/DeckStringDecoderKMP
 - Run Script 放在 `Compile Sources` 前
 - 关闭 `User Script Sandboxing`
 - Kotlin 代码断点优先设置在 `deckstring/src/commonMain/kotlin/...`
+
+详细的断点位置、Run Script 行为、LLDB 限制和本机验证记录见 `ios_debug_demo/README.md`。
 
 可先验证 debug framework 能生成：
 
