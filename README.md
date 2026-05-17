@@ -8,6 +8,61 @@
 - `DeckStringDecoderKMP`：KMP source of truth，包含 Kotlin common core、SKIE Swift facade、Gradle/KMP/SKIE 配置、KMP tests、SwiftPM binary local consumer verification、release CI。
 - `DeckStringDecoderKMPPackage`：public SwiftPM binary wrapper，负责 `.binaryTarget(url:checksum:)`、GitHub Release asset、README/CHANGELOG/release notes、public consumer verification。
 
+## iOS Demo 接入方式选择
+
+本项目的 iOS demo 可能有三种接入诉求：验证已发布的 XCFramework、基于本地 KMP 源码进行联调、以及在 iOS app 中断点调试 Kotlin 代码。三种诉求对应不同的集成方式，不应混用。
+
+### 1. Release XCFramework 消费
+
+用于验证外部 iOS app 是否能像普通 SwiftPM 用户一样消费已发布的 KMP binary。
+
+推荐位置：`DeckStringDecoderKMPPackage/Examples/iOSDemo`
+
+接入方式：
+
+- demo 依赖 `https://github.com/SunsetWan/DeckStringDecoderKMPPackage.git`
+- wrapper repo 的 `Package.swift` 通过 `.binaryTarget(url:checksum:)` 指向 GitHub Release 中的 `DeckStringDecoder.xcframework.zip`
+- demo 代码只使用 `import DeckStringDecoder` 和 Swift-facing API
+
+该方式适合发布验收和外部使用示例，不适合断点调试 Kotlin 源码。
+
+### 2. 本地 KMP 源码联调
+
+用于让 iOS demo 在本地构建时从 `DeckStringDecoderKMP` 源码生成 framework。
+
+推荐位置：`DeckStringDecoderKMP/ios_debug_demo`
+
+Xcode Run Script 调用：
+
+```sh
+export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
+cd /Users/sunset/HS_APP/DeckStringDecoderKMP
+./gradlew :deckstring:embedAndSignAppleFrameworkForXcode
+```
+
+该方式适合开发期联调 Kotlin 源码变更，但不证明 public SwiftPM release 已经可用。
+
+### 3. 本地 KMP 源码断点调试
+
+用于在 iOS demo 中触发 Swift-facing API，并断点进入 Kotlin/Native 代码。
+
+它基于“本地 KMP 源码联调”方式，额外要求：
+
+- Xcode Build Settings 设置 `KOTLIN_FRAMEWORK_BUILD_TYPE=Debug`
+- 使用 simulator 优先调试
+- Run Script 放在 `Compile Sources` 前
+- 关闭 `User Script Sandboxing`
+- Kotlin 代码断点优先设置在 `deckstring/src/commonMain/kotlin/...`
+
+可先验证 debug framework 能生成：
+
+```sh
+JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
+  ./gradlew :deckstring:linkDebugFrameworkIosSimulatorArm64 --console=plain
+```
+
+Kotlin/Native 调试依赖 DWARF/LLDB。它支持断点和 step，但表达式求值体验不等同于 Swift 源码调试。
+
 ## 常用命令
 
 本机如果 shell 找不到 Java，可使用 Android Studio JBR：
