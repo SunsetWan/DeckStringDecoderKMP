@@ -103,67 +103,43 @@ public object DeckStringCodecBridge {
 
         val reader = ByteReader(bytes)
 
-        val reserved = when (val result = reader.readByte()) {
-            is ReadResult.Success -> result.value
-            is ReadResult.Failure -> return DecodeResult.Failure(result.failure)
-        }
+        val reserved = reader.readByte() ?: return DecodeResult.Failure(reader.currentFailure)
         if (reserved != 0) {
             return DecodeResult.Failure(DeckStringFailure.InvalidReservedByte(reserved))
         }
 
-        val version = when (val result = reader.readVarint()) {
-            is ReadResult.Success -> result.value
-            is ReadResult.Failure -> return DecodeResult.Failure(result.failure)
-        }
+        val version = reader.readVarint() ?: return DecodeResult.Failure(reader.currentFailure)
         if (version != KMP_DECKSTRING_VERSION) {
             return DecodeResult.Failure(DeckStringFailure.UnsupportedVersion(version))
         }
 
-        val formatValue = when (val result = reader.readVarint()) {
-            is ReadResult.Success -> result.value
-            is ReadResult.Failure -> return DecodeResult.Failure(result.failure)
-        }
+        val formatValue = reader.readVarint() ?: return DecodeResult.Failure(reader.currentFailure)
         val format = KmpDeckFormat.fromRawValue(formatValue)
             ?: return DecodeResult.Failure(DeckStringFailure.InvalidFormat(formatValue))
 
-        val heroCount = when (val result = reader.readVarint()) {
-            is ReadResult.Success -> result.value
-            is ReadResult.Failure -> return DecodeResult.Failure(result.failure)
-        }
+        val heroCount = reader.readVarint() ?: return DecodeResult.Failure(reader.currentFailure)
         if (heroCount != 1) {
             return DecodeResult.Failure(DeckStringFailure.InvalidHeroCount(heroCount))
         }
 
-        val heroes = mutableListOf<Int>()
+        val heroes = ArrayList<Int>(heroCount)
         repeat(heroCount) {
-            val hero = when (val result = reader.readVarint()) {
-                is ReadResult.Success -> result.value
-                is ReadResult.Failure -> return DecodeResult.Failure(result.failure)
-            }
-            heroes += hero
+            heroes += reader.readVarint() ?: return DecodeResult.Failure(reader.currentFailure)
         }
 
-        val cards = mutableListOf<KmpCard>()
-        when (val result = reader.readNormalCardGroups(cards)) {
-            is ReadResult.Success -> Unit
-            is ReadResult.Failure -> return DecodeResult.Failure(result.failure)
-        }
+        val cards = reader.readNormalCardGroups()
+            ?: return DecodeResult.Failure(reader.currentFailure)
 
-        val sideboardCards = mutableListOf<KmpSideboardCard>()
-        if (reader.hasRemaining()) {
-            val marker = when (val result = reader.readByte()) {
-                is ReadResult.Success -> result.value
-                is ReadResult.Failure -> return DecodeResult.Failure(result.failure)
-            }
-
+        val sideboardCards: List<KmpSideboardCard> = if (reader.hasRemaining()) {
+            val marker = reader.readByte() ?: return DecodeResult.Failure(reader.currentFailure)
             when (marker) {
-                0 -> Unit
-                1 -> when (val result = reader.readSideboardCardGroups(sideboardCards)) {
-                    is ReadResult.Success -> Unit
-                    is ReadResult.Failure -> return DecodeResult.Failure(result.failure)
-                }
+                0 -> emptyList()
+                1 -> reader.readSideboardCardGroups()
+                    ?: return DecodeResult.Failure(reader.currentFailure)
                 else -> return DecodeResult.Failure(DeckStringFailure.InvalidSideboardFormat)
             }
+        } else {
+            emptyList()
         }
 
         return DecodeResult.Success(KmpDeck(format, heroes, cards, sideboardCards))
@@ -202,26 +178,25 @@ public object DeckStringCodecBridge {
     }
 }
 
-private sealed class ReadResult {
-    data class Success(val value: Int) : ReadResult()
-    data class Failure(val failure: DeckStringFailure) : ReadResult()
-}
-
 private class ByteReader(private val bytes: ByteArray) {
     private var index: Int = 0
+    private var failure: DeckStringFailure? = null
+
+    val currentFailure: DeckStringFailure
+        get() = failure ?: DeckStringFailure.InvalidValue("reader failed without a recorded failure")
 
     fun hasRemaining(): Boolean = index < bytes.size
 
-    fun readByte(): ReadResult {
+    fun readByte(): Int? {
         if (index >= bytes.size) {
-            return ReadResult.Failure(DeckStringFailure.UnexpectedEndOfData)
+            return fail(DeckStringFailure.UnexpectedEndOfData)
         }
-        return ReadResult.Success(bytes[index++].toInt() and 0xFF)
+        return bytes[index++].toInt() and 0xFF
     }
 
-    fun readVarint(): ReadResult {
+    fun readVarint(): Int? {
         if (index >= bytes.size) {
-            return ReadResult.Failure(DeckStringFailure.UnexpectedEndOfData)
+            return fail(DeckStringFailure.UnexpectedEndOfData)
         }
 
         var shift = 0
@@ -235,88 +210,141 @@ private class ByteReader(private val bytes: ByteArray) {
 
             val payload = byte and 0x7F
             if (shift == 28 && payload > 0x07) {
-                return ReadResult.Failure(DeckStringFailure.MalformedVarint)
+                return fail(DeckStringFailure.MalformedVarint)
             }
             result = result or (payload shl shift)
             shift += 7
 
             if ((byte and 0x80) == 0) {
-                return ReadResult.Success(result)
+                return result
             }
         }
 
-        return ReadResult.Failure(
+        return fail(
             if (bytesRead >= maxBytes) DeckStringFailure.MalformedVarint
             else DeckStringFailure.UnexpectedEndOfData
         )
     }
 
-    fun readNormalCardGroups(cards: MutableList<KmpCard>): ReadResult {
-        val singleCount = readVarintOrReturnFailure() ?: return lastFailure
-        repeat(singleCount) {
-            val cardId = readVarintOrReturnFailure() ?: return lastFailure
-            cards += KmpCard(dbfId = cardId, count = 1)
+    fun readNormalCardGroups(): List<KmpCard>? {
+        val singleCount = readVarint() ?: return null
+        val singleCards = readNormalCardsWithFixedCount(singleCount, count = 1) ?: return null
+
+        val doubleCount = readVarint() ?: return null
+        val doubleCards = readNormalCardsWithFixedCount(doubleCount, count = 2) ?: return null
+
+        val multiCount = readVarint() ?: return null
+        val multiCards = readNormalCardsWithExplicitCount(multiCount) ?: return null
+
+        val totalEntryCount = groupEntryCount(singleCount, doubleCount, multiCount)
+            ?: return fail(DeckStringFailure.InvalidValue("card group count overflow"))
+        return ArrayList<KmpCard>(totalEntryCount).apply {
+            addAll(singleCards)
+            addAll(doubleCards)
+            addAll(multiCards)
+        }
+    }
+
+    fun readSideboardCardGroups(): List<KmpSideboardCard>? {
+        val singleCount = readVarint() ?: return null
+        val singleCards = readSideboardCardsWithFixedCount(singleCount, count = 1) ?: return null
+
+        val doubleCount = readVarint() ?: return null
+        val doubleCards = readSideboardCardsWithFixedCount(doubleCount, count = 2) ?: return null
+
+        val multiCount = readVarint() ?: return null
+        val multiCards = readSideboardCardsWithExplicitCount(multiCount) ?: return null
+
+        val totalEntryCount = groupEntryCount(singleCount, doubleCount, multiCount)
+            ?: return fail(DeckStringFailure.InvalidValue("sideboard group count overflow"))
+        return ArrayList<KmpSideboardCard>(totalEntryCount).apply {
+            addAll(singleCards)
+            addAll(doubleCards)
+            addAll(multiCards)
+        }
+    }
+
+    private fun readNormalCardsWithFixedCount(entryCount: Int, count: Int): List<KmpCard>? {
+        if (!canReadMinimumVarints(entryCount, valuesPerEntry = 1)) {
+            return fail(DeckStringFailure.UnexpectedEndOfData)
         }
 
-        val doubleCount = readVarintOrReturnFailure() ?: return lastFailure
-        repeat(doubleCount) {
-            val cardId = readVarintOrReturnFailure() ?: return lastFailure
-            cards += KmpCard(dbfId = cardId, count = 2)
-        }
-
-        val multiCount = readVarintOrReturnFailure() ?: return lastFailure
-        repeat(multiCount) {
-            val cardId = readVarintOrReturnFailure() ?: return lastFailure
-            val count = readVarintOrReturnFailure() ?: return lastFailure
+        val cards = ArrayList<KmpCard>(entryCount)
+        repeat(entryCount) {
+            val cardId = readVarint() ?: return null
             cards += KmpCard(dbfId = cardId, count = count)
         }
-
-        return ReadResult.Success(0)
+        return cards
     }
 
-    fun readSideboardCardGroups(cards: MutableList<KmpSideboardCard>): ReadResult {
-        val singleCount = readVarintOrReturnFailure() ?: return lastFailure
-        repeat(singleCount) {
-            val cardId = readVarintOrReturnFailure() ?: return lastFailure
-            val sideboardOwner = readVarintOrReturnFailure() ?: return lastFailure
-            cards += KmpSideboardCard(dbfId = cardId, count = 1, sideboardOwner = sideboardOwner)
+    private fun readNormalCardsWithExplicitCount(entryCount: Int): List<KmpCard>? {
+        if (!canReadMinimumVarints(entryCount, valuesPerEntry = 2)) {
+            return fail(DeckStringFailure.UnexpectedEndOfData)
         }
 
-        val doubleCount = readVarintOrReturnFailure() ?: return lastFailure
-        repeat(doubleCount) {
-            val cardId = readVarintOrReturnFailure() ?: return lastFailure
-            val sideboardOwner = readVarintOrReturnFailure() ?: return lastFailure
-            cards += KmpSideboardCard(dbfId = cardId, count = 2, sideboardOwner = sideboardOwner)
+        val cards = ArrayList<KmpCard>(entryCount)
+        repeat(entryCount) {
+            val cardId = readVarint() ?: return null
+            val count = readVarint() ?: return null
+            cards += KmpCard(dbfId = cardId, count = count)
+        }
+        return cards
+    }
+
+    private fun readSideboardCardsWithFixedCount(
+        entryCount: Int,
+        count: Int,
+    ): List<KmpSideboardCard>? {
+        if (!canReadMinimumVarints(entryCount, valuesPerEntry = 2)) {
+            return fail(DeckStringFailure.UnexpectedEndOfData)
         }
 
-        val multiCount = readVarintOrReturnFailure() ?: return lastFailure
-        repeat(multiCount) {
-            val cardId = readVarintOrReturnFailure() ?: return lastFailure
-            val count = readVarintOrReturnFailure() ?: return lastFailure
-            val sideboardOwner = readVarintOrReturnFailure() ?: return lastFailure
+        val cards = ArrayList<KmpSideboardCard>(entryCount)
+        repeat(entryCount) {
+            val cardId = readVarint() ?: return null
+            val sideboardOwner = readVarint() ?: return null
             cards += KmpSideboardCard(dbfId = cardId, count = count, sideboardOwner = sideboardOwner)
         }
-
-        return ReadResult.Success(0)
+        return cards
     }
 
-    private lateinit var lastFailure: ReadResult.Failure
-
-    private fun readVarintOrReturnFailure(): Int? =
-        when (val result = readVarint()) {
-            is ReadResult.Success -> result.value
-            is ReadResult.Failure -> {
-                lastFailure = result
-                null
-            }
+    private fun readSideboardCardsWithExplicitCount(entryCount: Int): List<KmpSideboardCard>? {
+        if (!canReadMinimumVarints(entryCount, valuesPerEntry = 3)) {
+            return fail(DeckStringFailure.UnexpectedEndOfData)
         }
+
+        val cards = ArrayList<KmpSideboardCard>(entryCount)
+        repeat(entryCount) {
+            val cardId = readVarint() ?: return null
+            val count = readVarint() ?: return null
+            val sideboardOwner = readVarint() ?: return null
+            cards += KmpSideboardCard(dbfId = cardId, count = count, sideboardOwner = sideboardOwner)
+        }
+        return cards
+    }
+
+    private fun canReadMinimumVarints(entryCount: Int, valuesPerEntry: Int): Boolean {
+        if (entryCount < 0) {
+            return false
+        }
+        val minimumBytes = entryCount.toLong() * valuesPerEntry.toLong()
+        return minimumBytes <= (bytes.size - index).toLong()
+    }
+
+    private fun <T> fail(failure: DeckStringFailure): T? {
+        this.failure = failure
+        return null
+    }
 }
 
 private class ByteWriter {
-    private val bytes = mutableListOf<Byte>()
+    private var bytes = ByteArray(64)
+    private var size: Int = 0
 
     fun writeByte(value: Int) {
-        bytes += (value and 0xFF).toByte()
+        ensureCapacity(size + 1)
+        bytes[size] = (value and 0xFF).toByte()
+        size += 1
     }
 
     fun writeVarint(value: Int): DeckStringFailure? {
@@ -326,10 +354,10 @@ private class ByteWriter {
 
         var remaining = value
         while (remaining >= 0x80) {
-            bytes += (((remaining and 0x7F) or 0x80) and 0xFF).toByte()
+            writeByte((remaining and 0x7F) or 0x80)
             remaining = remaining ushr 7
         }
-        bytes += (remaining and 0x7F).toByte()
+        writeByte(remaining and 0x7F)
         return null
     }
 
@@ -380,7 +408,20 @@ private class ByteWriter {
         return null
     }
 
-    fun toByteArray(): ByteArray = bytes.toByteArray()
+    fun toByteArray(): ByteArray = bytes.copyOf(size)
+
+    private fun ensureCapacity(requiredCapacity: Int) {
+        if (requiredCapacity <= bytes.size) {
+            return
+        }
+
+        var newCapacity = bytes.size
+        while (newCapacity < requiredCapacity) {
+            val doubledCapacity = newCapacity * 2
+            newCapacity = if (doubledCapacity > newCapacity) doubledCapacity else requiredCapacity
+        }
+        bytes = bytes.copyOf(newCapacity)
+    }
 }
 
 private data class CardGroups<T>(
@@ -389,19 +430,44 @@ private data class CardGroups<T>(
     val multiCards: List<T>,
 )
 
-private fun List<KmpCard>.trisort(): CardGroups<KmpCard> =
-    CardGroups(
-        singleCards = filter { it.count == 1 },
-        doubleCards = filter { it.count == 2 },
-        multiCards = filter { it.count != 1 && it.count != 2 },
-    )
+private fun List<KmpCard>.trisort(): CardGroups<KmpCard> {
+    val singleCards = ArrayList<KmpCard>()
+    val doubleCards = ArrayList<KmpCard>()
+    val multiCards = ArrayList<KmpCard>()
+    for (card in this) {
+        when (card.count) {
+            1 -> singleCards += card
+            2 -> doubleCards += card
+            else -> multiCards += card
+        }
+    }
+    return CardGroups(singleCards, doubleCards, multiCards)
+}
 
-private fun List<KmpSideboardCard>.trisort(): CardGroups<KmpSideboardCard> =
-    CardGroups(
-        singleCards = filter { it.count == 1 },
-        doubleCards = filter { it.count == 2 },
-        multiCards = filter { it.count != 1 && it.count != 2 },
-    )
+private fun List<KmpSideboardCard>.trisort(): CardGroups<KmpSideboardCard> {
+    val singleCards = ArrayList<KmpSideboardCard>()
+    val doubleCards = ArrayList<KmpSideboardCard>()
+    val multiCards = ArrayList<KmpSideboardCard>()
+    for (card in this) {
+        when (card.count) {
+            1 -> singleCards += card
+            2 -> doubleCards += card
+            else -> multiCards += card
+        }
+    }
+    return CardGroups(singleCards, doubleCards, multiCards)
+}
+
+private fun groupEntryCount(vararg counts: Int): Int? {
+    var total = 0L
+    for (count in counts) {
+        total += count.toLong()
+        if (total > Int.MAX_VALUE) {
+            return null
+        }
+    }
+    return total.toInt()
+}
 
 @OptIn(ExperimentalEncodingApi::class)
 private fun decodeBase64(value: String): ByteArray = Base64.Default.decode(value)

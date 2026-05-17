@@ -1,0 +1,14 @@
+- [x] 1.1 创建 OpenSpec change 并补 proposal/design/tasks/spec delta
+- [x] 1.2 补 KMP Rogue / Pool Party Maiev fixture parity test
+- [x] 1.3 补 KMP specific card parsing parity test：Zilliax 102983、Wakener 111678
+- [x] 1.4 补 KMP empty string decode failure parity test
+- [x] 1.5 补 KMP trailing bytes 当前兼容行为锁定测试
+- [x] 2.1 将 normal cards trisort 改为单次遍历
+- [x] 2.2 将 sideboard cards trisort 改为单次遍历
+- [x] 2.3 用 growable ByteArray 重写 ByteWriter
+- [x] 2.4 重构 ByteReader 成功路径，减少对象分配
+- [x] 2.5 为 decode cards/sideboards 增加容量预分配
+- [x] 3.1 运行 OpenSpec strict validation
+- [x] 3.2 运行 KMP iOS simulator tests 与 allTests
+- [x] 3.3 运行 Swift 原包 swift test
+- [x] 3.4 勾选 tasks 并归档 change

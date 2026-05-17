@@ -51,6 +51,27 @@ class DeckStringCoreTest {
     }
 
     @Test
+    fun decodesRoguePoolPartyMaievFixtureParity() {
+        val deck = decodeSuccess(ROGUE_POOL_PARTY_MAIEV_DECK)
+
+        assertEquals(KmpDeckFormat.Standard, deck.format)
+        assertEquals(listOf(122992), deck.heroes)
+        assertEquals(30, deck.totalCardCount)
+        assertEquals(12, deck.cards.count { it.count == 1 })
+        assertEquals(9, deck.cards.count { it.count == 2 })
+        assertTrue(deck.cards.any { it.dbfId > 100000 })
+    }
+
+    @Test
+    fun decodesDeathKnightSpecificCardParsingParity() {
+        val deck = decodeSuccess(DEATH_KNIGHT_DECK)
+
+        assertEquals(KmpCard(dbfId = 102983, count = 1), deck.cards.single { it.dbfId == 102983 })
+        assertEquals(KmpCard(dbfId = 111678, count = 2), deck.cards.single { it.dbfId == 111678 })
+        assertEquals(deck.cards.map { it.dbfId }.sorted(), deck.cards.map { it.dbfId })
+    }
+
+    @Test
     fun decodesWildSideboardDeck() {
         val deck = decodeSuccess(WILD_SIDEBOARD_DECK)
 
@@ -84,6 +105,13 @@ class DeckStringCoreTest {
         val redecodedDeck = decodeSuccess(encoded)
 
         assertEquals(originalDeck, redecodedDeck)
+    }
+
+    @Test
+    fun encodePreservesCanonicalSwiftOutputAfterGroupingOptimization() {
+        val deck = decodeSuccess(BASIC_WARRIOR_DECK)
+
+        assertEquals(BASIC_WARRIOR_DECK, encodeSuccess(deck))
     }
 
     @Test
@@ -133,6 +161,11 @@ class DeckStringCoreTest {
     }
 
     @Test
+    fun emptyStringDecodeFailsWithUnexpectedEndOfData() {
+        assertEquals(DeckStringFailure.UnexpectedEndOfData, decodeFailure(""))
+    }
+
+    @Test
     fun invalidSideboardMarkerFails() {
         val invalid = deckStringBytes {
             writeByte(0)
@@ -171,6 +204,31 @@ class DeckStringCoreTest {
         }
 
         assertEquals(DeckStringFailure.MalformedVarint, decodeFailure(malicious))
+    }
+
+    @Test
+    fun trailingBytesRemainCompatible() {
+        val deckString = deckStringBytes {
+            writeByte(0)
+            writeVarint(1)
+            writeVarint(2)
+            writeVarint(1)
+            writeVarint(7)
+            writeVarint(0)
+            writeVarint(0)
+            writeVarint(0)
+            writeByte(0)
+            writeByte(0x7F)
+            writeByte(0x80)
+            writeByte(0x01)
+        }
+
+        val deck = decodeSuccess(deckString)
+
+        assertEquals(KmpDeckFormat.Standard, deck.format)
+        assertEquals(listOf(7), deck.heroes)
+        assertEquals(0, deck.totalCardCount)
+        assertEquals(emptyList(), deck.sideboardCards)
     }
 
     @Test
@@ -253,6 +311,8 @@ class DeckStringCoreTest {
             "AAECAfHhBArHpAa9sQbC6Aap9QaSgwfDgweDigfvkweCmAf1mAcKquEG5uUGvugG9O0GtfoGgf0GloIHl4IHtpQH0JsHAAED9bMGx6QG97MGx6QG7t4Gx6QGAAA="
         private const val SWIFT_DEATH_KNIGHT_ZILLIAX_DECK =
             "AAECAfHhBArHpAa9sQbC6Aap9QaSgwfDgweDigfvkweCmAf1mAcKquEG5uUGvugG9O0GtfoGgf0GloIHl4IHtpQH0JsHAAED9bMGx6QG97MGx6QG6N4Gx6QGAAA="
+        private const val ROGUE_POOL_PARTY_MAIEV_DECK =
+            "AAECAfDABwzHpAan0waM1gal4Qap9Qbf/gahgQeSgwfDgwesiAeCmAfspQcJ9p8E958E0J4G/agGs6kGtrUG6ckG6uUGtfoGAAED9bMGx6QG97MGx6QG6N4Gx6QGAAA="
         private const val WILD_SIDEBOARD_DECK =
             "AAEBAZCaBgjlsASotgSX7wTvkQXipAX9xAXPxgXGxwUQvp8EobYElrcE+dsEuNwEutwE9vAEhoMFopkF4KQFlMQFu8QFu8cFuJ4Gz54G0Z4GAAED8J8E/cQFuNkE/cQF/+EE/cQFAAA="
         private const val WILD_DECK =

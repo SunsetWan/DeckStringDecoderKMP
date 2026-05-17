@@ -1,18 +1,4 @@
-# deckstring-kmp-core Specification
-
-## Purpose
-TBD - created by archiving change migrate-deckstring-core-to-kmp. Update Purpose after archive.
-## Requirements
-### Requirement: Kotlin common deck model
-KMP core SHALL provide Kotlin common model types for deck format, cards, sideboard cards, and decks, and deck construction SHALL produce canonical ordering compatible with the current Swift model.
-
-#### Scenario: Deck construction sorts canonical fields
-- **WHEN** a `KmpDeck` is constructed with unsorted heroes, cards, and sideboard cards
-- **THEN** heroes SHALL be sorted ascending, cards SHALL be sorted by `dbfId`, and sideboard cards SHALL be sorted by `sideboardOwner` then `dbfId`
-
-#### Scenario: Deck totals are exposed
-- **WHEN** a `KmpDeck` contains normal cards and sideboard cards
-- **THEN** it SHALL expose total normal card count and total sideboard card count as sums of their `count` values
+## MODIFIED Requirements
 
 ### Requirement: Kotlin common decode behavior
 KMP core SHALL decode standard Hearthstone deck strings in Kotlin common with behavior aligned to the current Swift implementation.
@@ -78,30 +64,3 @@ KMP core SHALL include common tests that lock compatibility with current Swift d
 #### Scenario: Empty string decode failure parity exists
 - **WHEN** Kotlin common tests run
 - **THEN** they SHALL assert empty string decode returns `DeckStringFailure.UnexpectedEndOfData`
-
-### Requirement: SKIE Swift facade parity
-The SKIE-bundled Swift facade SHALL preserve the Swift-facing behavior of the existing source package while delegating deckstring parsing and encoding to the Kotlin common core.
-
-#### Scenario: Decode parity through Swift facade
-- **WHEN** Swift calls `DeckStringDecoder().decode` through the SKIE-built framework with standard、wild、sideboard and whitespace-padded fixtures from the Swift test suite
-- **THEN** the returned `Deck` SHALL match the source Swift implementation for format、heroes、cards、sideboard cards and canonical sorting
-
-#### Scenario: Encode parity through Swift facade
-- **WHEN** Swift calls `DeckStringDecoder().encode` through the SKIE-built framework with decks covering normal cards、sideboard cards、round trip and canonical sorting
-- **THEN** the returned deck string SHALL match the source Swift implementation for the same semantic deck
-
-#### Scenario: Error mapping parity through Swift facade
-- **WHEN** Swift calls `DeckStringDecoder().decode` or `DeckStringDecoder().encode` through the SKIE-built framework with invalid base64、invalid reserved byte、unsupported version、invalid format、invalid hero count、truncated data and invalid sideboard marker cases
-- **THEN** the thrown `DeckStringError` SHALL match the source Swift API error case expected by existing Swift tests
-
-### Requirement: Swift/Kotlin boundary validation
-The Swift facade SHALL define and validate the numeric boundary between Swift `Int` public models and Kotlin/Native `Int32` bridge models.
-
-#### Scenario: Hearthstone DBF IDs and counts bridge safely
-- **WHEN** Swift facade converts valid Hearthstone hero IDs、card DBF IDs、card counts and sideboard owner IDs into Kotlin bridge models
-- **THEN** values SHALL round trip without truncation or sign changes
-
-#### Scenario: Out-of-range Swift values fail explicitly
-- **WHEN** Swift facade receives a `Deck` containing a value that cannot be represented by the Kotlin bridge type used by `KmpDeck`、`KmpCard` or `KmpSideboardCard`
-- **THEN** encode SHALL fail with a documented Swift `DeckStringError` behavior rather than silently truncating the value
-
