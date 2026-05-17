@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install OpenSpec
+        run: npm install -g @fission-ai/openspec
+
+      - name: Prepare scripts
+        run: chmod +x ./gradlew scripts/*.sh
+
+      - name: Select iOS simulator
+        run: echo "IOS_SIMULATOR_DESTINATION=$(scripts/select-ios-simulator-destination.sh)" >> "$GITHUB_ENV"
+
+      - name: Validate OpenSpec specs
+        run: openspec validate --specs --strict
+
+      - name: Run KMP iOS simulator tests
+        run: ./gradlew :deckstring:iosSimulatorArm64Test --console=plain
+
+      - name: Build SwiftPM binary artifact
+        run: ./gradlew :deckstring:prepareDeckStringDecoderSwiftPMBinaryRelease --console=plain
+
+      - name: Verify SwiftPM binary artifact
+        run: |
+          scripts/verify-swiftpm-artifact.sh \
+            deckstring/build/swiftpm-binary/DeckStringDecoder.xcframework.zip \
+            deckstring/build/swiftpm-binary/DeckStringDecoder.xcframework.zip.checksum
+
+      - name: Verify local SwiftPM binary consumer
+        run: ./gradlew :deckstring:verifyDeckStringDecoderSwiftPMConsumer --console=plain
+
+      - name: Upload SwiftPM binary artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeckStringDecoder.xcframework
+          path: |
+            deckstring/build/swiftpm-binary/DeckStringDecoder.xcframework.zip
+            deckstring/build/swiftpm-binary/DeckStringDecoder.xcframework.zip.checksum
+          if-no-files-found: error

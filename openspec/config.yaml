@@ -1,0 +1,11 @@
+schema: spec-driven
+
+context: |
+  语言：中文（简体）
+  proposal.md、design.md、tasks.md 和 spec 正文使用简体中文。
+  保留 OpenSpec 结构性标题和关键标记，例如：
+  - ## ADDED Requirements
+  - ### Requirement:
+  - #### Scenario:
+  - - [ ] 1.1
+  需求场景里的 **WHEN** / **THEN** 标记保持英文，以兼容 OpenSpec 解析。

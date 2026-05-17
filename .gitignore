@@ -1,0 +1,10 @@
+.build/
+.gradle/
+.kotlin/
+build/
+deckstring/build/
+swiftpm-binary/consumer/.build/
+swiftpm-binary/consumer/Artifacts/*.zip
+local.properties
+gradle/gradle-daemon-jvm.properties
+.DS_Store

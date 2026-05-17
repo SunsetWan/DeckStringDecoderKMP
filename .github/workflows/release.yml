@@ -1,0 +1,126 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Release tag for DeckStringDecoderKMPPackage, for example 0.1.0-kmp.2
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: macos-latest
+    env:
+      ARTIFACT_NAME: DeckStringDecoder.xcframework.zip
+      WRAPPER_REPO: SunsetWan/DeckStringDecoderKMPPackage
+
+    steps:
+      - name: Checkout KMP source
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install OpenSpec
+        run: npm install -g @fission-ai/openspec
+
+      - name: Prepare scripts
+        run: chmod +x ./gradlew scripts/*.sh
+
+      - name: Select iOS simulator
+        run: echo "IOS_SIMULATOR_DESTINATION=$(scripts/select-ios-simulator-destination.sh)" >> "$GITHUB_ENV"
+
+      - name: Validate OpenSpec specs
+        run: openspec validate --specs --strict
+
+      - name: Run KMP iOS simulator tests
+        run: ./gradlew :deckstring:iosSimulatorArm64Test --console=plain
+
+      - name: Build SwiftPM binary artifact
+        run: ./gradlew :deckstring:prepareDeckStringDecoderSwiftPMBinaryRelease --console=plain
+
+      - name: Verify SwiftPM binary artifact
+        run: |
+          scripts/verify-swiftpm-artifact.sh \
+            deckstring/build/swiftpm-binary/${ARTIFACT_NAME} \
+            deckstring/build/swiftpm-binary/${ARTIFACT_NAME}.checksum
+
+      - name: Verify local SwiftPM binary consumer
+        run: ./gradlew :deckstring:verifyDeckStringDecoderSwiftPMConsumer --console=plain
+
+      - name: Read checksum
+        run: echo "ARTIFACT_CHECKSUM=$(tr -d '[:space:]' < deckstring/build/swiftpm-binary/${ARTIFACT_NAME}.checksum)" >> "$GITHUB_ENV"
+
+      - name: Checkout wrapper repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.WRAPPER_REPO }}
+          path: wrapper
+          token: ${{ secrets.KMP_PACKAGE_REPO_TOKEN }}
+          fetch-depth: 0
+
+      - name: Update wrapper repo files
+        run: |
+          scripts/update-wrapper-release.sh \
+            "${{ inputs.release_tag }}" \
+            "$ARTIFACT_CHECKSUM" \
+            wrapper
+
+      - name: Commit and tag wrapper repo
+        working-directory: wrapper
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release ${{ inputs.release_tag }}"
+          git tag "${{ inputs.release_tag }}"
+          git push origin main
+          git push origin "${{ inputs.release_tag }}"
+
+      - name: Create wrapper GitHub release and upload artifact
+        env:
+          GH_TOKEN: ${{ secrets.KMP_PACKAGE_REPO_TOKEN }}
+        run: |
+          gh release create "${{ inputs.release_tag }}" \
+            "deckstring/build/swiftpm-binary/${ARTIFACT_NAME}" \
+            --repo "$WRAPPER_REPO" \
+            --title "DeckStringDecoderKMPPackage ${{ inputs.release_tag }}" \
+            --notes-file "wrapper/releases/${{ inputs.release_tag }}.md"
+
+      - name: Verify public release artifact
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          public_url="https://github.com/${WRAPPER_REPO}/releases/download/${RELEASE_TAG}/${ARTIFACT_NAME}"
+          mkdir -p .release-download
+          for attempt in 1 2 3 4 5; do
+            if curl --fail --location --silent --show-error --output ".release-download/${ARTIFACT_NAME}" "$public_url"; then
+              break
+            fi
+            if [ "$attempt" = "5" ]; then
+              exit 1
+            fi
+            sleep 10
+          done
+          printf '%s\n' "$ARTIFACT_CHECKSUM" > ".release-download/${ARTIFACT_NAME}.checksum"
+          scripts/verify-swiftpm-artifact.sh \
+            ".release-download/${ARTIFACT_NAME}" \
+            ".release-download/${ARTIFACT_NAME}.checksum"
+          grep -F "$public_url" wrapper/Package.swift
+          grep -F "$ARTIFACT_CHECKSUM" wrapper/Package.swift
+
+      - name: Verify public SwiftPM consumer
+        working-directory: wrapper
+        run: scripts/verify-public-consumer.sh
