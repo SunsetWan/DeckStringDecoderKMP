@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Release tag for DeckStringDecoderKMPPackage, for example 0.1.0-kmp.2
+        description: "Release tag for DeckStringDecoderKMPPackage. Format: <semver>-kmp.<n>, for example 0.1.0-kmp.3"
         required: true
         type: string
 

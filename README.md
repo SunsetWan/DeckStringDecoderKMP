@@ -68,7 +68,22 @@ IOS_SIMULATOR_DESTINATION="platform=iOS Simulator,name=iPhone 16 Pro" \
 
 ## Release
 
-`.github/workflows/release.yml` 通过 `workflow_dispatch` 手动触发，输入 `release_tag`，例如 `0.1.0-kmp.2`。
+`.github/workflows/release.yml` 通过 `workflow_dispatch` 手动触发，输入 `release_tag`。release tag 固定使用：
+
+```text
+<semver>-kmp.<n>
+```
+
+版本号规则：
+
+- `semver` 表示 Swift-facing API 版本。
+- `kmp.N` 表示 KMP/SKIE binary artifact 发布序号。
+- Swift API、platform、SwiftPM product/module 名不变时，只递增 `kmp.N`。
+- API 兼容性新增时递增 minor，例如 `0.2.0-kmp.1`。
+- API 破坏性变化在 `1.0.0` 前递增 minor；稳定后按 SemVer 递增 major。
+- 文档-only 且不改变 artifact URL/checksum 时不发新版本。
+
+当前 public wrapper 最新 release 是 `0.1.0-kmp.2`。本次 `DeckStringCore` parity/optimization 不改变 Swift-facing API、platform、SwiftPM product/module 名称，下一次真实 release tag 推荐为 `0.1.0-kmp.3`。
 
 Release workflow 需要配置 secret：
 
