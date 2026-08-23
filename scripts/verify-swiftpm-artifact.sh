@@ -91,4 +91,35 @@ if [ "$framework_count" -lt 2 ]; then
   exit 1
 fi
 
+frozen_declarations=(
+  '@frozen public enum DeckFormat'
+  '@frozen public struct Card'
+  '@frozen public struct SideboardCard'
+  '@frozen public struct Deck'
+  '@frozen public enum DeckStringError'
+  '@frozen public struct DeckStringDecoder'
+)
+
+interface_count=0
+while IFS= read -r swift_interface; do
+  interface_count=$((interface_count + 1))
+  for declaration in "${frozen_declarations[@]}"; do
+    if ! grep -Fq "$declaration" "$swift_interface"; then
+      echo "Missing fixed-layout source-package declaration in $swift_interface:" >&2
+      echo "$declaration" >&2
+      exit 1
+    fi
+  done
+done < <(
+  find "$verification_dir/DeckStringDecoder.xcframework" \
+    -type f \
+    -name '*.swiftinterface' \
+    -print
+)
+
+if [ "$interface_count" -lt 2 ]; then
+  echo "Expected Swift interfaces for device and simulator slices." >&2
+  exit 1
+fi
+
 printf 'Verified %s\n' "$artifact_path"

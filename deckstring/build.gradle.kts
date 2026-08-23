@@ -4,8 +4,12 @@ import co.touchlab.skie.configuration.EnumInterop
 import co.touchlab.skie.configuration.FunctionInterop
 import co.touchlab.skie.configuration.SealedInterop
 import org.gradle.api.DefaultTask
+import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.RegularFileProperty
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputFile
+import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.gradle.api.tasks.bundling.Zip
@@ -40,6 +44,42 @@ abstract class ComputeSwiftPMChecksumTask @Inject constructor(
         outputFile.parentFile.mkdirs()
         outputFile.writeText("$checksum\n")
         logger.lifecycle("SwiftPM checksum for ${artifact.get().asFile.name}: $checksum")
+    }
+}
+
+abstract class VerifySwiftPMConsumerTask @Inject constructor(
+    private val execOperations: ExecOperations
+) : DefaultTask() {
+    @get:InputFile
+    abstract val checksumFile: RegularFileProperty
+
+    @get:Internal
+    abstract val consumerDirectory: DirectoryProperty
+
+    @get:Input
+    abstract val simulatorDestination: Property<String>
+
+    @TaskAction
+    fun verify() {
+        val artifactChecksum = checksumFile.get().asFile.readText().trim()
+        require(artifactChecksum.matches(Regex("[0-9a-f]{64}"))) {
+            "Expected a lowercase SHA-256 SwiftPM checksum, got: $artifactChecksum"
+        }
+
+        val consumerDirectoryFile = consumerDirectory.get().asFile
+        execOperations.exec {
+            workingDir(consumerDirectoryFile)
+            commandLine(
+                "xcodebuild",
+                "-scheme",
+                "DeckStringDecoderBinaryConsumer",
+                "-destination",
+                simulatorDestination.get(),
+                "-derivedDataPath",
+                consumerDirectoryFile.resolve(".build/xcode-derived-data/$artifactChecksum").absolutePath,
+                "test"
+            )
+        }
     }
 }
 
@@ -147,20 +187,12 @@ tasks.register("prepareDeckStringDecoderSwiftPMBinaryRelease") {
     )
 }
 
-tasks.register<Exec>("verifyDeckStringDecoderSwiftPMConsumer") {
+tasks.register<VerifySwiftPMConsumerTask>("verifyDeckStringDecoderSwiftPMConsumer") {
     group = "verification"
     description = "Run the local SwiftPM binary consumer tests on iOS Simulator."
 
     dependsOn("prepareDeckStringDecoderSwiftPMBinaryRelease")
-    workingDir = rootProject.layout.projectDirectory.dir("swiftpm-binary/consumer").asFile
-    commandLine(
-        "xcodebuild",
-        "-scheme",
-        "DeckStringDecoderBinaryConsumer",
-        "-destination",
-        iosSimulatorDestination.get(),
-        "-derivedDataPath",
-        ".build/xcode-derived-data",
-        "test"
-    )
+    checksumFile.set(releaseXcFrameworkChecksumFile)
+    consumerDirectory.set(rootProject.layout.projectDirectory.dir("swiftpm-binary/consumer"))
+    simulatorDestination.set(iosSimulatorDestination)
 }

@@ -26,6 +26,11 @@ SKIE-bundled Swift facade SHALL 在把 deckstring 解析与编码委托给 Kotli
 - **THEN** KMP binary 的 device 与 simulator slices SHALL 导出对应的四个兼容入口
 - **THEN** 同名 source module 原位替换为 binary module SHALL NOT 要求清理 DerivedData 才能链接
 
+#### Scenario: Source-package value layout remains runtime compatible
+- **WHEN** 旧 consumer object file 构造或读取 `DeckFormat`、`Card`、`SideboardCard`、`Deck`、`DeckStringError` 或 `DeckStringDecoder`
+- **THEN** binary framework SHALL 通过 `@frozen` 使用与 source package caller 兼容的固定布局与调用约定
+- **THEN** source→binary 原位替换 SHALL 不只链接成功，还能正确构造、访问与比较这些值
+
 #### Scenario: Decode parity through Swift facade
 - **WHEN** Swift calls `DeckStringDecoder().decode` through the SKIE-built framework with standard、wild、sideboard and whitespace-padded fixtures from the Swift test suite
 - **THEN** the returned `Deck` SHALL match the source Swift implementation for format、heroes、cards、sideboard cards and canonical sorting

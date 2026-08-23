@@ -22,7 +22,7 @@ release workflow SHALL 在报告发布完成前运行 specification validation�
 - **THEN** 同一时间 SHALL 最多运行一个 binary release job
 
 #### Scenario: New KMP artifact is published
-- **WHEN** release `0.1.0-kmp.4` is requested
+- **WHEN** release `0.1.0-kmp.5` is requested
 - **THEN** the workflow SHALL generate and checksum the XCFramework zip
 - **THEN** the public wrapper SHALL point to the uploaded artifact with the verified checksum
 - **THEN** the public consumer SHALL pass through the Swift-facing API
@@ -30,3 +30,4 @@ release workflow SHALL 在报告发布完成前运行 specification validation�
 #### Scenario: Packaged migration ABI is verified
 - **WHEN** artifact verifier 检查 release XCFramework zip
 - **THEN** 每个 Apple slice SHALL 包含 source-package replacement 所需的四个 equality symbol
+- **THEN** 每个 Apple `.swiftinterface` SHALL 将六个公开 enum/struct 声明为 `@frozen`
