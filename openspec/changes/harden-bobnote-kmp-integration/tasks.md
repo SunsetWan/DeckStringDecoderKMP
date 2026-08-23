@@ -25,5 +25,5 @@
 
 - [x] 4.1 生成并验证 release XCFramework 与 local SwiftPM consumer
 - [x] 4.2 发布 `0.1.0-kmp.4` wrapper artifact 并回读公开 checksum；记录其 fresh consumer 通过但旧 object 构造器运行失败
-- [ ] 4.3 发布 `0.1.0-kmp.5` fixed-layout wrapper artifact 并回读公开 checksum
-- [ ] 4.4 让 BobNote 精确锁定 `.5`，并通过旧 object、完整 UT、Debug 与 Release build
+- [x] 4.3 发布 `0.1.0-kmp.5` fixed-layout wrapper artifact 并回读公开 checksum
+- [x] 4.4 让 BobNote 精确锁定 `.5`，并通过旧 object、完整 UT、Debug 与 Release build

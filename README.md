@@ -155,7 +155,7 @@ IOS_SIMULATOR_DESTINATION="platform=iOS Simulator,name=iPhone 16 Pro" \
 - API 破坏性变化在 `1.0.0` 前递增 minor；稳定后按 SemVer 递增 major。
 - 文档-only 且不改变 artifact URL/checksum 时不发新版本。
 
-当前 public wrapper 最新 release 是 `0.1.0-kmp.4`。真实 BobNote 增量运行进一步发现 source package 固定布局与 binary framework resilient value type 的构造器 ABI 差异；本次以 `@frozen` 固定公开值类型布局，不改变 Swift-facing source API、platform、SwiftPM product/module 名称，下一次真实 release tag 为 `0.1.0-kmp.5`。
+当前 public wrapper 最新 release 是 `0.1.0-kmp.5`。该版本以 `@frozen` 固定公开值类型布局，保持 source package → binary framework 原位替换的构造器与属性 ABI；Swift-facing source API、platform、SwiftPM product/module 名称不变。
 
 构建链固定 Gradle distribution SHA-256、OpenSpec 版本和 GitHub Actions commit SHA；更新这些值时必须同时验证官方发布来源与完整 CI。
 
