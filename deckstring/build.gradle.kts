@@ -46,6 +46,7 @@ abstract class ComputeSwiftPMChecksumTask @Inject constructor(
 kotlin {
     val deckStringDecoderXcFramework = XCFramework("DeckStringDecoder")
 
+    jvm()
     iosArm64()
     iosSimulatorArm64()
     iosX64()

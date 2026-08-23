@@ -13,6 +13,11 @@ wrapper_repo="SunsetWan/DeckStringDecoderKMPPackage"
 artifact_name="DeckStringDecoder.xcframework.zip"
 artifact_url="https://github.com/${wrapper_repo}/releases/download/${release_tag}/${artifact_name}"
 
+if ! printf '%s\n' "$release_tag" | grep -Eq '^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)-kmp\.[1-9][0-9]*$'; then
+  echo "Release tag must match <semver>-kmp.<positive-integer>." >&2
+  exit 1
+fi
+
 if [ ! -f "$wrapper_dir/Package.swift" ]; then
   echo "Wrapper repo Package.swift not found in $wrapper_dir" >&2
   exit 1
@@ -88,7 +93,7 @@ This repository includes a minimal public consumer under \`Verification/Consumer
 scripts/verify-public-consumer.sh
 \`\`\`
 
-The consumer verifies \`import DeckStringDecoder\`, \`DeckStringDecoder()\` construction, decode, encode round trip, sideboard decoding, and error mapping through the Swift-facing API only.
+The consumer verifies \`import DeckStringDecoder\`, \`DeckStringDecoder()\` construction, decode, encode round trip, sideboard decoding, error mapping, and native Swift model conformances through the Swift-facing API only.
 EOF
 
 changelog="$wrapper_dir/CHANGELOG.md"
@@ -121,6 +126,7 @@ cat > "$wrapper_dir/releases/${release_tag}.md" <<EOF
 - SwiftPM binary artifact zip structure and checksum are verified.
 - Device and simulator slices are checked for \`.swiftinterface\` files.
 - Local SwiftPM binary consumer tests run before publishing.
+- Device and simulator binaries retain the source-package equality entry points needed for incremental replacement.
 - The public release asset is downloaded and checksum-verified after upload.
 - Public SwiftPM consumer tests run through \`DeckStringDecoderKMPPackage\`.
 EOF

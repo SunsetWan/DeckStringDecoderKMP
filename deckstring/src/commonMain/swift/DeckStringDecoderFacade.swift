@@ -193,6 +193,32 @@ public enum DeckStringError: Error, LocalizedError, Equatable {
     }
 }
 
+// Preserve the equality entry points emitted by HS_DeckStringDecoder 1.0.1.
+// Existing consumer object files can then link the same-named KMP binary module
+// without requiring a DerivedData cleanup during the package replacement.
+@_silgen_name("$s17DeckStringDecoder4CardV23__derived_struct_equalsySbAC_ACtFZ")
+func sourcePackageCardEquals(_ lhs: Card, _ rhs: Card) -> Bool {
+    lhs == rhs
+}
+
+@_silgen_name("$s17DeckStringDecoder13SideboardCardV23__derived_struct_equalsySbAC_ACtFZ")
+func sourcePackageSideboardCardEquals(_ lhs: SideboardCard, _ rhs: SideboardCard) -> Bool {
+    lhs == rhs
+}
+
+@_silgen_name("$s17DeckStringDecoder0A0V23__derived_struct_equalsySbAC_ACtFZ")
+func sourcePackageDeckEquals(_ lhs: Deck, _ rhs: Deck) -> Bool {
+    lhs == rhs
+}
+
+@_silgen_name("$s17DeckStringDecoder0aB5ErrorO21__derived_enum_equalsySbAC_ACtFZ")
+func sourcePackageDeckStringErrorEquals(
+    _ lhs: DeckStringError,
+    _ rhs: DeckStringError
+) -> Bool {
+    lhs == rhs
+}
+
 public struct DeckStringDecoder {
     public init() {}
 

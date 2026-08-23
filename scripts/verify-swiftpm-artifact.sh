@@ -48,4 +48,47 @@ if ! printf '%s\n' "$entries" | grep -Eq '^DeckStringDecoder\.xcframework/ios-.+
   exit 1
 fi
 
+if printf '%s\n' "$entries" | grep -Eq '(^|/)\.\.(/|$)|^/'; then
+  echo "Artifact contains an unsafe zip path." >&2
+  exit 1
+fi
+
+verification_dir="$(mktemp -d "${TMPDIR:-/tmp}/deckstring-artifact-verification.XXXXXX")"
+cleanup() {
+  rm -rf -- "$verification_dir"
+}
+trap cleanup EXIT
+
+ditto -x -k "$artifact_path" "$verification_dir"
+
+compatibility_symbols=(
+  '_$s17DeckStringDecoder4CardV23__derived_struct_equalsySbAC_ACtFZ'
+  '_$s17DeckStringDecoder13SideboardCardV23__derived_struct_equalsySbAC_ACtFZ'
+  '_$s17DeckStringDecoder0A0V23__derived_struct_equalsySbAC_ACtFZ'
+  '_$s17DeckStringDecoder0aB5ErrorO21__derived_enum_equalsySbAC_ACtFZ'
+)
+
+framework_count=0
+while IFS= read -r framework_binary; do
+  framework_count=$((framework_count + 1))
+  exported_symbols="$(nm -gj "$framework_binary")"
+  for symbol in "${compatibility_symbols[@]}"; do
+    if ! printf '%s\n' "$exported_symbols" | grep -Fqx "$symbol"; then
+      echo "Missing source-package compatibility symbol in $framework_binary:" >&2
+      echo "$symbol" >&2
+      exit 1
+    fi
+  done
+done < <(
+  find "$verification_dir/DeckStringDecoder.xcframework" \
+    -type f \
+    -path '*/DeckStringDecoder.framework/DeckStringDecoder' \
+    -print
+)
+
+if [ "$framework_count" -lt 2 ]; then
+  echo "Expected at least device and simulator framework binaries." >&2
+  exit 1
+fi
+
 printf 'Verified %s\n' "$artifact_path"

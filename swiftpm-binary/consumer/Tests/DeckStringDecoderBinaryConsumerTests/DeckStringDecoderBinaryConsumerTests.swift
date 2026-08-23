@@ -4,6 +4,38 @@ import DeckStringDecoder
 import DeckStringDecoderBinaryConsumer
 
 final class DeckStringDecoderBinaryConsumerTests: XCTestCase {
+    func testSourcePackageModelConformanceParity() throws {
+        let cards = [
+            Card(dbfId: 401, count: 2),
+            Card(dbfId: 7, count: 1),
+        ]
+        let sideboardCards = [
+            SideboardCard(dbfId: 104_949, count: 1, sideboardOwner: 102_983),
+        ]
+        let deck = Deck(
+            format: .standard,
+            heroes: [7],
+            cards: cards,
+            sideboardCards: sideboardCards)
+
+        XCTAssertEqual(cards[0], Card(dbfId: 401, count: 2))
+        XCTAssertEqual(sideboardCards[0], SideboardCard(
+            dbfId: 104_949,
+            count: 1,
+            sideboardOwner: 102_983))
+        XCTAssertEqual(deck, Deck(
+            format: .standard,
+            heroes: [7],
+            cards: cards,
+            sideboardCards: sideboardCards))
+        XCTAssertEqual(Set([deck, deck]).count, 1)
+        XCTAssertEqual(
+            try JSONDecoder().decode(Deck.self, from: JSONEncoder().encode(deck)),
+            deck)
+        XCTAssertEqual(DeckStringError.invalidFormat(5), .invalidFormat(5))
+        XCTAssertNotEqual(DeckStringError.invalidFormat(5), .invalidFormat(4))
+    }
+
     func testDecodeEncodeAndSideboardThroughSwiftFacade() throws {
         let decoder = DeckStringDecoderBinaryConsumer.makeDecoder()
 

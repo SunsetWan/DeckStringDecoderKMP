@@ -93,6 +93,12 @@ openspec validate --specs --strict
 ./gradlew :deckstring:iosSimulatorArm64Test --console=plain
 ```
 
+运行同一套 `commonTest` JVM tests，验证解析核心没有意外依赖 Apple 平台：
+
+```sh
+./gradlew :deckstring:jvmTest --console=plain
+```
+
 生成 SwiftPM binary release artifact 和 checksum：
 
 ```sh
@@ -126,6 +132,7 @@ IOS_SIMULATOR_DESTINATION="platform=iOS Simulator,name=iPhone 16 Pro" \
 
 - `openspec validate --specs --strict`
 - `:deckstring:iosSimulatorArm64Test`
+- `:deckstring:jvmTest`
 - `:deckstring:prepareDeckStringDecoderSwiftPMBinaryRelease`
 - `scripts/verify-swiftpm-artifact.sh`
 - `:deckstring:verifyDeckStringDecoderSwiftPMConsumer`
@@ -148,7 +155,9 @@ IOS_SIMULATOR_DESTINATION="platform=iOS Simulator,name=iPhone 16 Pro" \
 - API 破坏性变化在 `1.0.0` 前递增 minor；稳定后按 SemVer 递增 major。
 - 文档-only 且不改变 artifact URL/checksum 时不发新版本。
 
-当前 public wrapper 最新 release 是 `0.1.0-kmp.2`。本次 `DeckStringCore` parity/optimization 不改变 Swift-facing API、platform、SwiftPM product/module 名称，下一次真实 release tag 推荐为 `0.1.0-kmp.3`。
+当前 public wrapper 最新 release 是 `0.1.0-kmp.3`。本次 source-package ABI 兼容修复不改变 Swift-facing API、platform、SwiftPM product/module 名称，下一次真实 release tag 为 `0.1.0-kmp.4`。
+
+构建链固定 Gradle distribution SHA-256、OpenSpec 版本和 GitHub Actions commit SHA；更新这些值时必须同时验证官方发布来源与完整 CI。
 
 Release workflow 需要配置 secret：
 
