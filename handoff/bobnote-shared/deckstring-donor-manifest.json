@@ -1,0 +1,93 @@
+{
+  "behaviorCategories": [
+    "model construction and canonical sorting",
+    "decode and golden fixtures",
+    "encode and canonical output",
+    "sideboard parsing and encoding",
+    "malformed input and error mapping",
+    "numeric boundary validation",
+    "Swift Codable, Equatable, and Hashable parity",
+    "decode-encode-decode round trip"
+  ],
+  "donorCommit": "af490607cc79c5f28152537a375dd07adf9f099d",
+  "files": [
+    {
+      "category": "build-context",
+      "path": "build.gradle.kts",
+      "sha256": "1049d3872d6e4b7a3bd8cdb393c030a453087616c1b306e49466273a1a0e47de"
+    },
+    {
+      "category": "build-context",
+      "path": "deckstring/build.gradle.kts",
+      "sha256": "07540c92aeceb0d28132344c6a0c2d3f686d9d7029f562c66cabf10286422bfa"
+    },
+    {
+      "category": "production-kotlin",
+      "path": "deckstring/src/commonMain/kotlin/com/sunsetwan/deckstring/DeckStringCore.kt",
+      "sha256": "9e735a2a688fab68ea7c9424a30de606a92b26a3376bb0efc60c9fa1dceed827"
+    },
+    {
+      "category": "production-kotlin",
+      "path": "deckstring/src/commonMain/kotlin/com/sunsetwan/deckstring/KmpBuildSkeleton.kt",
+      "sha256": "0dfc0cb21b9a77e2cdb2b45cbd178ac7771518ada59b82e7c8146f7450b7127e"
+    },
+    {
+      "category": "swift-facade-source",
+      "path": "deckstring/src/commonMain/swift/DeckStringDecoderFacade.swift",
+      "sha256": "cf27da00384a662ec7e93f5cf5ec26b7aa2a8ceec2bb95bb0a73d93a597436e2"
+    },
+    {
+      "category": "common-tests",
+      "path": "deckstring/src/commonTest/kotlin/com/sunsetwan/deckstring/DeckStringCoreTest.kt",
+      "sha256": "3f1d34b2e5184ecb89f9338e7d8b689621f8bca1c4e868ec2cdfe1f86b829bc3"
+    },
+    {
+      "category": "common-tests",
+      "path": "deckstring/src/commonTest/kotlin/com/sunsetwan/deckstring/KmpBuildSkeletonTest.kt",
+      "sha256": "5eb75a4915593bdc7eba9ee94b885d3c35b706584b604055bbbb5b90d0cc0c61"
+    },
+    {
+      "category": "build-context",
+      "path": "gradle.properties",
+      "sha256": "e6bf3cd4b36d0419567358e822f62d9cbc13d9e8994f05f205545ec28b9b1324"
+    },
+    {
+      "category": "build-context",
+      "path": "gradle/wrapper/gradle-wrapper.jar",
+      "sha256": "b3a875ddc1f044746e1b1a55f645584505f4a10438c1afea9f15e92a7c42ec13"
+    },
+    {
+      "category": "build-context",
+      "path": "gradle/wrapper/gradle-wrapper.properties",
+      "sha256": "8df19453d443acd1f26dab9dde6201e23efa13ea33b67348b5e18ba248b1252b"
+    },
+    {
+      "category": "build-context",
+      "path": "gradlew",
+      "sha256": "fb68debc1b1acf8ec55dc0d5e5495e1dedd0bd6b61f304bee61613eeb2bd9b92"
+    },
+    {
+      "category": "build-context",
+      "path": "settings.gradle.kts",
+      "sha256": "b1b02c67cd03f109c5b8c0fb188f447886766d291466e26f0d25acc09dedd545"
+    }
+  ],
+  "repository": {
+    "licenseStatus": "The frozen donor tree has no standalone LICENSE file; this is an internal same-owner product transfer, not a public relicensing grant.",
+    "provenance": "Ordinary source snapshot from the immutable donor Git tree; original history remains in the donor repository.",
+    "remote": "git@github.com:SunsetWan/DeckStringDecoderKMP.git"
+  },
+  "schemaVersion": 1,
+  "toolchain": {
+    "gradle": "9.3.0",
+    "gradleDistributionSha256": "0d585f69da091fc5b2beced877feab55a3064d43b8a1d46aeb07996b0915e0e0",
+    "kotlin": "2.3.20",
+    "skie": "0.10.11"
+  },
+  "verificationCommands": [
+    "./gradlew :deckstring:jvmTest :deckstring:iosSimulatorArm64Test --console=plain",
+    "./gradlew :deckstring:prepareDeckStringDecoderSwiftPMBinaryRelease --console=plain",
+    "./gradlew :deckstring:verifyDeckStringDecoderSwiftPMConsumer --console=plain",
+    "openspec validate --changes --strict --no-interactive"
+  ]
+}
