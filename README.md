@@ -1,11 +1,11 @@
 # DeckStringDecoderKMP
 
-`DeckStringDecoderKMP` 是 `DeckStringDecoder` 的 Kotlin Multiplatform source repo，负责 KMP/SKIE 实现、测试、SwiftPM binary artifact 生成，以及发布到 public SwiftPM wrapper repo 的 CI 流程。
+`DeckStringDecoderKMP` 保留 `DeckStringDecoder` 的 Kotlin Multiplatform donor history、既有测试、demo、SwiftPM binary artifact 与独立 consumer CI。BobNote 产品当前 deckstring Kotlin implementation、Core bridge 与 Swift facade 的唯一 source owner 已切换为 `BobNoteSharedKMP`；本仓库的 `0.1.0-kmp.5` 是历史回滚基线，不再作为 BobNote 新功能的平行发布线。
 
 ## 三仓关系
 
 - `HS_DeckStringDecoder`：原 Swift source package 和迁移期 parity baseline，保留 `Package.swift`、`Sources/`、`Tests/`，不作为 KMP binary 发布入口。
-- `DeckStringDecoderKMP`：KMP source of truth，包含 Kotlin common core、SKIE Swift facade、Gradle/KMP/SKIE 配置、KMP tests、SwiftPM binary local consumer verification、release CI。
+- `DeckStringDecoderKMP`：BobNote 的历史 donor 与独立 consumer evidence，包含冻结 Kotlin common core、SKIE Swift facade、Gradle/KMP/SKIE 配置、KMP tests、SwiftPM binary local consumer verification、release CI；BobNote 的后续 source of truth 是 `BobNoteSharedKMP`。
 - `DeckStringDecoderKMPPackage`：public SwiftPM binary wrapper，负责 `.binaryTarget(url:checksum:)`、GitHub Release asset、README/CHANGELOG/release notes、public consumer verification。
 
 ## iOS Demo 接入方式选择
@@ -93,6 +93,12 @@ openspec validate --specs --strict
 ./gradlew :deckstring:iosSimulatorArm64Test --console=plain
 ```
 
+运行同一套 `commonTest` JVM tests，验证解析核心没有意外依赖 Apple 平台：
+
+```sh
+./gradlew :deckstring:jvmTest --console=plain
+```
+
 生成 SwiftPM binary release artifact 和 checksum：
 
 ```sh
@@ -126,6 +132,7 @@ IOS_SIMULATOR_DESTINATION="platform=iOS Simulator,name=iPhone 16 Pro" \
 
 - `openspec validate --specs --strict`
 - `:deckstring:iosSimulatorArm64Test`
+- `:deckstring:jvmTest`
 - `:deckstring:prepareDeckStringDecoderSwiftPMBinaryRelease`
 - `scripts/verify-swiftpm-artifact.sh`
 - `:deckstring:verifyDeckStringDecoderSwiftPMConsumer`
@@ -148,7 +155,11 @@ IOS_SIMULATOR_DESTINATION="platform=iOS Simulator,name=iPhone 16 Pro" \
 - API 破坏性变化在 `1.0.0` 前递增 minor；稳定后按 SemVer 递增 major。
 - 文档-only 且不改变 artifact URL/checksum 时不发新版本。
 
-当前 public wrapper 最新 release 是 `0.1.0-kmp.2`。本次 `DeckStringCore` parity/optimization 不改变 Swift-facing API、platform、SwiftPM product/module 名称，下一次真实 release tag 推荐为 `0.1.0-kmp.3`。
+当前 public wrapper 最新 release 是 `0.1.0-kmp.5`。该版本以 `@frozen` 固定公开值类型布局，保持 source package → binary framework 原位替换的构造器与属性 ABI；Swift-facing source API、platform、SwiftPM product/module 名称不变。
+
+BobNote 已接受 `BobNoteSharedKMP` source Pods，因此本仓库不再为 BobNote 产品发布新的平行 `kmp.N` artifact。若未来需要恢复独立外部 consumer 发布或调整 remote 状态，必须通过新的 change 和明确授权；不会由本次 ownership transfer 自动发生。
+
+构建链固定 Gradle distribution SHA-256、OpenSpec 版本和 GitHub Actions commit SHA；更新这些值时必须同时验证官方发布来源与完整 CI。
 
 Release workflow 需要配置 secret：
 

@@ -160,7 +160,7 @@ public object DeckStringCodecBridge {
             if (failure != null) return EncodeResult.Failure(failure)
         }
 
-        val (singleCards, doubleCards, multiCards) = deck.cards.trisort()
+        val (singleCards, doubleCards, multiCards) = deck.cards.trisortCards()
         val failure = writer.writeNormalCardGroups(singleCards, doubleCards, multiCards)
         if (failure != null) return EncodeResult.Failure(failure)
 
@@ -168,7 +168,8 @@ public object DeckStringCodecBridge {
             writer.writeByte(0)
         } else {
             writer.writeByte(1)
-            val (singleSideboards, doubleSideboards, multiSideboards) = deck.sideboardCards.trisort()
+            val (singleSideboards, doubleSideboards, multiSideboards) =
+                deck.sideboardCards.trisortSideboardCards()
             val sideboardFailure =
                 writer.writeSideboardCardGroups(singleSideboards, doubleSideboards, multiSideboards)
             if (sideboardFailure != null) return EncodeResult.Failure(sideboardFailure)
@@ -430,7 +431,7 @@ private data class CardGroups<T>(
     val multiCards: List<T>,
 )
 
-private fun List<KmpCard>.trisort(): CardGroups<KmpCard> {
+private fun List<KmpCard>.trisortCards(): CardGroups<KmpCard> {
     val singleCards = ArrayList<KmpCard>()
     val doubleCards = ArrayList<KmpCard>()
     val multiCards = ArrayList<KmpCard>()
@@ -444,7 +445,7 @@ private fun List<KmpCard>.trisort(): CardGroups<KmpCard> {
     return CardGroups(singleCards, doubleCards, multiCards)
 }
 
-private fun List<KmpSideboardCard>.trisort(): CardGroups<KmpSideboardCard> {
+private fun List<KmpSideboardCard>.trisortSideboardCards(): CardGroups<KmpSideboardCard> {
     val singleCards = ArrayList<KmpSideboardCard>()
     val doubleCards = ArrayList<KmpSideboardCard>()
     val multiCards = ArrayList<KmpSideboardCard>()

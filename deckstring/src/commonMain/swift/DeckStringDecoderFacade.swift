@@ -2,7 +2,11 @@ import Foundation
 
 public let DECKSTRING_VERSION: UInt8 = 1
 
-public enum DeckFormat: CaseIterable, Hashable, Codable, Sendable, RawRepresentable {
+// Keep the public value types layout-compatible with HS_DeckStringDecoder 1.0.1.
+// Source-package consumers compiled them as non-resilient values, so an
+// in-place binary replacement must expose the same constructor and accessor ABI.
+@frozen
+public enum DeckFormat: CaseIterable, Hashable, Codable, Sendable, BitwiseCopyable, RawRepresentable {
     public typealias RawValue = Int
     public typealias AllCases = [DeckFormat]
 
@@ -66,7 +70,8 @@ public enum DeckFormat: CaseIterable, Hashable, Codable, Sendable, RawRepresenta
     }
 }
 
-public struct Card: Equatable, Comparable, Hashable, Codable, Sendable {
+@frozen
+public struct Card: Equatable, Comparable, Hashable, Codable, Sendable, BitwiseCopyable {
     public let dbfId: Int
     public let count: Int
 
@@ -84,7 +89,8 @@ public struct Card: Equatable, Comparable, Hashable, Codable, Sendable {
     }
 }
 
-public struct SideboardCard: Equatable, Comparable, Hashable, Codable, Sendable {
+@frozen
+public struct SideboardCard: Equatable, Comparable, Hashable, Codable, Sendable, BitwiseCopyable {
     public let dbfId: Int
     public let count: Int
     public let sideboardOwner: Int
@@ -109,6 +115,7 @@ public struct SideboardCard: Equatable, Comparable, Hashable, Codable, Sendable 
     }
 }
 
+@frozen
 public struct Deck: Hashable, Codable, Sendable {
     public let format: DeckFormat
     public let heroes: [Int]
@@ -143,7 +150,8 @@ public struct Deck: Hashable, Codable, Sendable {
     }
 }
 
-public enum DeckStringError: Error, LocalizedError, Equatable {
+@frozen
+public enum DeckStringError: Error, LocalizedError, Equatable, BitwiseCopyable {
     case invalidBase64
     case invalidFormat(Int)
     case unsupportedVersion(Int)
@@ -193,7 +201,34 @@ public enum DeckStringError: Error, LocalizedError, Equatable {
     }
 }
 
-public struct DeckStringDecoder {
+// Preserve the equality entry points emitted by HS_DeckStringDecoder 1.0.1.
+// Existing consumer object files can then link the same-named KMP binary module
+// without requiring a DerivedData cleanup during the package replacement.
+@_silgen_name("$s17DeckStringDecoder4CardV23__derived_struct_equalsySbAC_ACtFZ")
+func sourcePackageCardEquals(_ lhs: Card, _ rhs: Card) -> Bool {
+    lhs == rhs
+}
+
+@_silgen_name("$s17DeckStringDecoder13SideboardCardV23__derived_struct_equalsySbAC_ACtFZ")
+func sourcePackageSideboardCardEquals(_ lhs: SideboardCard, _ rhs: SideboardCard) -> Bool {
+    lhs == rhs
+}
+
+@_silgen_name("$s17DeckStringDecoder0A0V23__derived_struct_equalsySbAC_ACtFZ")
+func sourcePackageDeckEquals(_ lhs: Deck, _ rhs: Deck) -> Bool {
+    lhs == rhs
+}
+
+@_silgen_name("$s17DeckStringDecoder0aB5ErrorO21__derived_enum_equalsySbAC_ACtFZ")
+func sourcePackageDeckStringErrorEquals(
+    _ lhs: DeckStringError,
+    _ rhs: DeckStringError
+) -> Bool {
+    lhs == rhs
+}
+
+@frozen
+public struct DeckStringDecoder: Sendable, BitwiseCopyable {
     public init() {}
 
     public func decode(_ deckString: String) throws -> Deck {
