@@ -1,7 +1,7 @@
 # deckstring-kmp-skie-distribution Specification
 
 ## Purpose
-TBD - created by archiving change make-skie-distributable-framework. Update Purpose after archive.
+记录早期 SKIE 单 Framework 分发契约。当前 Swift 源代码 facade 与 Kotlin runtime 分离方案以 deckstring-swiftpm-binary-distribution 为准。
 ## Requirements
 ### Requirement: 单 Framework SKIE 分发产物
 The project SHALL produce a single SKIE-built `DeckStringDecoder.xcframework` that contains the Kotlin common core and the bundled Swift facade required by Swift consumers.

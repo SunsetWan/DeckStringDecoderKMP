@@ -1,7 +1,9 @@
 # kmp-skie-ios-environment Specification
 
 ## Purpose
-TBD - created by archiving change setup-kmp-skie-ios-environment. Update Purpose after archive.
+记录 KMP iOS 工程、Gradle wrapper 与本地开发环境的初始配置。
+规定不依赖全局 Gradle 的构建入口和 Apple 平台开发验证范围。
+
 ## Requirements
 ### Requirement: 仓库内 Gradle 环境
 仓库 SHALL 提供用于 KMP 工作的本地 Gradle 入口，包括 Gradle wrapper 文件、root Gradle 配置、Gradle properties，以及包含 `deckstring` module 的 settings。

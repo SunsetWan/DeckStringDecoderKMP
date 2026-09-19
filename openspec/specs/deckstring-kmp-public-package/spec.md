@@ -1,7 +1,7 @@
 # deckstring-kmp-public-package Specification
 
 ## Purpose
-TBD - created by archiving change publish-deckstring-kmp-package. Update Purpose after archive.
+记录公开 SwiftPM wrapper、版本和发布产物的消费契约；当前源代码 facade 分层以 deckstring-swiftpm-binary-distribution 为准。
 ## Requirements
 ### Requirement: Public SwiftPM binary wrapper repository
 项目 SHALL 提供 public `DeckStringDecoderKMPPackage` repo，作为 KMP/SKIE `DeckStringDecoder` 的 SwiftPM binary package 入口。

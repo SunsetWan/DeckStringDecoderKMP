@@ -1,7 +1,9 @@
 # deckstring-kmp-core Specification
 
 ## Purpose
-TBD - created by archiving change migrate-deckstring-core-to-kmp. Update Purpose after archive.
+定义 Kotlin common 牌组模型、编解码行为及 Swift 兼容性边界。
+规范标准与狂野格式、备牌、错误映射及跨语言测试的预期结果。
+
 ## Requirements
 ### Requirement: Kotlin common deck model
 KMP core SHALL provide Kotlin common model types for deck format, cards, sideboard cards, and decks, and deck construction SHALL produce canonical ordering compatible with the current Swift model.
