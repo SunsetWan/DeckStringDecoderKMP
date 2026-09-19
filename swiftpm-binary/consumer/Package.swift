@@ -3,30 +3,14 @@ import PackageDescription
 
 let package = Package(
     name: "DeckStringDecoderBinaryConsumer",
-    platforms: [
-        .iOS(.v16),
-    ],
-    products: [
-        .library(
-            name: "DeckStringDecoderBinaryConsumer",
-            targets: ["DeckStringDecoderBinaryConsumer"]
-        ),
-    ],
+    platforms: [.iOS(.v16)],
+    products: [.library(name: "DeckStringDecoderBinaryConsumer", targets: ["DeckStringDecoderBinaryConsumer"])],
+    dependencies: [.package(path: "..")],
     targets: [
-        .binaryTarget(
-            name: "DeckStringDecoder",
-            path: "Artifacts/DeckStringDecoder.xcframework.zip"
-        ),
         .target(
             name: "DeckStringDecoderBinaryConsumer",
-            dependencies: ["DeckStringDecoder"]
+            dependencies: [.product(name: "DeckStringDecoder", package: "swiftpm-binary")]
         ),
-        .testTarget(
-            name: "DeckStringDecoderBinaryConsumerTests",
-            dependencies: [
-                "DeckStringDecoder",
-                "DeckStringDecoderBinaryConsumer",
-            ]
-        ),
+        .testTarget(name: "DeckStringDecoderBinaryConsumerTests", dependencies: ["DeckStringDecoderBinaryConsumer"]),
     ]
 )

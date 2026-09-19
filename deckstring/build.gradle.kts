@@ -1,8 +1,5 @@
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
-import co.touchlab.skie.configuration.EnumInterop
-import co.touchlab.skie.configuration.FunctionInterop
-import co.touchlab.skie.configuration.SealedInterop
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.tasks.InputFile
@@ -15,7 +12,6 @@ import javax.inject.Inject
 
 plugins {
     kotlin("multiplatform")
-    id("co.touchlab.skie")
 }
 
 abstract class ComputeSwiftPMChecksumTask @Inject constructor(
@@ -44,7 +40,7 @@ abstract class ComputeSwiftPMChecksumTask @Inject constructor(
 }
 
 kotlin {
-    val deckStringDecoderXcFramework = XCFramework("DeckStringDecoder")
+    val deckStringDecoderXcFramework = XCFramework("DeckStringRuntime")
 
     iosArm64()
     iosSimulatorArm64()
@@ -52,7 +48,7 @@ kotlin {
 
     targets.withType<KotlinNativeTarget>().configureEach {
         binaries.framework {
-            baseName = "DeckStringDecoder"
+            baseName = "DeckStringRuntime"
             isStatic = true
             binaryOption("bundleId", "com.sunsetwan.DeckStringDecoder")
             deckStringDecoderXcFramework.add(this)
@@ -66,36 +62,12 @@ kotlin {
     }
 }
 
-skie {
-    build {
-        produceDistributableFramework()
-        freeSwiftCompilerArgs.addAll(
-            listOf(
-                "-Xfrontend",
-                "-module-interface-preserve-types-as-written"
-            )
-        )
-    }
-
-    features {
-        group("com.sunsetwan.deckstring") {
-            EnumInterop.Enabled(false)
-            FunctionInterop.FileScopeConversion.Enabled(false)
-            SealedInterop.Enabled(false)
-        }
-    }
-
-    analytics {
-        enabled.set(false)
-    }
-}
-
-val releaseXcFrameworkName = "DeckStringDecoder.xcframework"
+val releaseXcFrameworkName = "DeckStringRuntime.xcframework"
 val releaseXcFrameworkZipName = "$releaseXcFrameworkName.zip"
 val swiftPMBinaryDirectory = layout.buildDirectory.dir("swiftpm-binary")
 val releaseXcFrameworkDirectory = layout.buildDirectory.dir("XCFrameworks/release/$releaseXcFrameworkName")
 val releaseXcFrameworkChecksumFile = layout.buildDirectory.file("swiftpm-binary/$releaseXcFrameworkZipName.checksum")
-val consumerArtifactDirectory = rootProject.layout.projectDirectory.dir("swiftpm-binary/consumer/Artifacts")
+val consumerArtifactDirectory = rootProject.layout.projectDirectory.dir("swiftpm-binary/Artifacts")
 val iosSimulatorDestination = providers.environmentVariable("IOS_SIMULATOR_DESTINATION")
     .orElse("platform=iOS Simulator,name=iPhone 17")
 
@@ -103,7 +75,7 @@ val zipDeckStringDecoderReleaseXCFramework = tasks.register<Zip>("zipDeckStringD
     group = "distribution"
     description = "Zip the release DeckStringDecoder.xcframework for SwiftPM binary target distribution."
 
-    dependsOn("assembleDeckStringDecoderReleaseXCFramework")
+    dependsOn("assembleDeckStringRuntimeReleaseXCFramework")
     from(releaseXcFrameworkDirectory) {
         into(releaseXcFrameworkName)
     }
@@ -151,15 +123,10 @@ tasks.register<Exec>("verifyDeckStringDecoderSwiftPMConsumer") {
     description = "Run the local SwiftPM binary consumer tests on iOS Simulator."
 
     dependsOn("prepareDeckStringDecoderSwiftPMBinaryRelease")
-    workingDir = rootProject.layout.projectDirectory.dir("swiftpm-binary/consumer").asFile
-    commandLine(
-        "xcodebuild",
-        "-scheme",
-        "DeckStringDecoderBinaryConsumer",
-        "-destination",
-        iosSimulatorDestination.get(),
-        "-derivedDataPath",
-        ".build/xcode-derived-data",
-        "test"
-    )
+    workingDir = rootProject.layout.projectDirectory.asFile
+    environment("IOS_SIMULATOR_DESTINATION", iosSimulatorDestination.get())
+    providers.environmentVariable("SWIFT_VERIFICATION_RESULTS").orNull?.let {
+        environment("SWIFT_VERIFICATION_RESULTS", it)
+    }
+    commandLine("bash", "scripts/verify-local-swift-package.sh")
 }

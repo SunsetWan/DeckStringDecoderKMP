@@ -8,3 +8,6 @@ swiftpm-binary/consumer/Artifacts/*.zip
 local.properties
 gradle/gradle-daemon-jvm.properties
 .DS_Store
+
+Artifacts/*.zip
+swiftpm-binary/Artifacts/*.zip

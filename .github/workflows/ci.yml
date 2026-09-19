@@ -27,6 +27,17 @@ jobs:
       - name: Install OpenSpec
         run: npm install -g @fission-ai/openspec
 
+      - name: Install xcsift
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/xcsift" "$HOME/.local/bin"
+          gh release download v1.3.2-sunset.2 --repo SunsetWan/xcsift \
+            --pattern "xcsift-v1.3.2-sunset.2-macos-arm64.tar.gz" --dir "$RUNNER_TEMP/xcsift"
+          tar -xzf "$RUNNER_TEMP/xcsift/xcsift-v1.3.2-sunset.2-macos-arm64.tar.gz" -C "$RUNNER_TEMP/xcsift"
+          install -m 0755 "$RUNNER_TEMP/xcsift/xcsift" "$HOME/.local/bin/xcsift"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Prepare scripts
         run: chmod +x ./gradlew scripts/*.sh
 
@@ -45,8 +56,8 @@ jobs:
       - name: Verify SwiftPM binary artifact
         run: |
           scripts/verify-swiftpm-artifact.sh \
-            deckstring/build/swiftpm-binary/DeckStringDecoder.xcframework.zip \
-            deckstring/build/swiftpm-binary/DeckStringDecoder.xcframework.zip.checksum
+            deckstring/build/swiftpm-binary/DeckStringRuntime.xcframework.zip \
+            deckstring/build/swiftpm-binary/DeckStringRuntime.xcframework.zip.checksum
 
       - name: Verify local SwiftPM binary consumer
         run: ./gradlew :deckstring:verifyDeckStringDecoderSwiftPMConsumer --console=plain
@@ -54,8 +65,8 @@ jobs:
       - name: Upload SwiftPM binary artifacts
         uses: actions/upload-artifact@v7.0.1
         with:
-          name: DeckStringDecoder.xcframework
+          name: DeckStringRuntime.xcframework
           path: |
-            deckstring/build/swiftpm-binary/DeckStringDecoder.xcframework.zip
-            deckstring/build/swiftpm-binary/DeckStringDecoder.xcframework.zip.checksum
+            deckstring/build/swiftpm-binary/DeckStringRuntime.xcframework.zip
+            deckstring/build/swiftpm-binary/DeckStringRuntime.xcframework.zip.checksum
           if-no-files-found: error

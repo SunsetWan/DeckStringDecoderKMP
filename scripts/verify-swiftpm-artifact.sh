@@ -2,7 +2,7 @@
 set -euo pipefail
 
 if [ "$#" -ne 2 ]; then
-  echo "Usage: $0 <DeckStringDecoder.xcframework.zip> <checksum-file>" >&2
+  echo "Usage: $0 <DeckStringRuntime.xcframework.zip> <checksum-file>" >&2
   exit 64
 fi
 
@@ -32,20 +32,19 @@ fi
 entries="$(zipinfo -1 "$artifact_path")"
 top_levels="$(printf '%s\n' "$entries" | awk -F/ 'NF > 0 && $1 != "" { print $1 }' | sort -u)"
 
-if [ "$top_levels" != "DeckStringDecoder.xcframework" ]; then
+if [ "$top_levels" != "DeckStringRuntime.xcframework" ]; then
   echo "Unexpected zip top-level entries:" >&2
   printf '%s\n' "$top_levels" >&2
   exit 1
 fi
 
-if ! printf '%s\n' "$entries" | grep -Eq '^DeckStringDecoder\.xcframework/ios-arm64/DeckStringDecoder\.framework/Modules/DeckStringDecoder\.swiftmodule/.+\.swiftinterface$'; then
-  echo "Device slice is missing DeckStringDecoder.swiftinterface." >&2
-  exit 1
-fi
-
-if ! printf '%s\n' "$entries" | grep -Eq '^DeckStringDecoder\.xcframework/ios-.+-simulator/DeckStringDecoder\.framework/Modules/DeckStringDecoder\.swiftmodule/.+\.swiftinterface$'; then
-  echo "Simulator slice is missing DeckStringDecoder.swiftinterface." >&2
-  exit 1
-fi
+for slice in ios-arm64 ios-arm64_x86_64-simulator; do
+  for member in Headers/DeckStringRuntime.h Modules/module.modulemap DeckStringRuntime; do
+    if ! printf '%s\n' "$entries" | grep -Fxq "DeckStringRuntime.xcframework/$slice/DeckStringRuntime.framework/$member"; then
+      echo "Missing runtime artifact member: $slice/$member" >&2
+      exit 1
+    fi
+  done
+done
 
 printf 'Verified %s\n' "$artifact_path"

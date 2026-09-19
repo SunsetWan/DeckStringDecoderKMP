@@ -1,6 +1,6 @@
 # DeckStringDecoderKMPDebugDemo
 
-`DeckStringDecoderKMPDebugDemo` 是本仓库内的本地 Kotlin/Native 断点调试 demo。它只用于从 iOS app 触发 `DeckStringDecoder` 的 Swift-facing API，并通过本地 KMP source repo 生成 Debug framework；它不证明 public SwiftPM release 或 `DeckStringDecoderKMPPackage` 可用。
+`DeckStringDecoderKMPDebugDemo` 是本仓库内的本地 Kotlin/Native 断点调试 demo。它只用于从 iOS app 触发 共享 Swift facade 的 API，并通过本地 KMP source repo 生成 `DeckStringRuntime` Debug framework；它不证明 public SwiftPM release 或 `DeckStringDecoderKMPPackage` 可用。
 
 ## 打开方式
 
@@ -24,7 +24,7 @@ app target 的 Debug 配置设置：
 - `ENABLE_USER_SCRIPT_SANDBOXING = NO`
 - `IPHONEOS_DEPLOYMENT_TARGET = 15.0`
 
-`Embed DeckStringDecoder Debug Framework` Run Script 位于 `Compile Sources` 前：
+`Embed DeckStringRuntime Debug Framework` Run Script 位于 `Compile Sources` 前：
 
 ```sh
 export JAVA_HOME="${JAVA_HOME:-/Applications/Android Studio.app/Contents/jbr/Contents/Home}"
@@ -42,7 +42,9 @@ cd "${SRCROOT}/../.."
 - `Round Trip`：decode 后调用 `DeckStringDecoder().encode(_:)`，再 decode 回来比较 `Deck`。
 - `Invalid Input`：通过 Swift-facing API 捕获并展示 `DeckStringError`。
 
-demo Swift code 只 `import DeckStringDecoder` 并使用 Swift-facing API，不直接引用 `KmpDeck`、`DecodeResult`、`EncodeResult` 或 `DeckStringCodecBridge`。
+demo 直接引用 `swiftpm-binary/Sources` 中同一份模型和 facade 源文件，不复制实现。`DECKSTRING_INTEGRATED_DEBUG` 仅跳过 facade 对独立模型模块的 import 与别名，使两个源文件可以在 demo 模块内编译；SwiftPM 产品继续使用 `DeckStringModels` 的唯一类型身份。UI 不直接引用 `KmpDeck`、`DecodeResult`、`EncodeResult` 或 `DeckStringCodecBridge`。
+
+该接入保留本地 Kotlin Debug 构建和断点入口，不依赖 Release XCFramework。源文件按 Swift 5 默认非隔离语义编译；demo UI 保留 SwiftUI 的隔离规则。
 
 ## 断点位置
 

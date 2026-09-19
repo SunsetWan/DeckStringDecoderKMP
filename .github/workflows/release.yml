@@ -15,7 +15,7 @@ jobs:
   release:
     runs-on: macos-latest
     env:
-      ARTIFACT_NAME: DeckStringDecoder.xcframework.zip
+      ARTIFACT_NAME: DeckStringRuntime.xcframework.zip
       WRAPPER_REPO: SunsetWan/DeckStringDecoderKMPPackage
 
     steps:
@@ -35,6 +35,17 @@ jobs:
 
       - name: Install OpenSpec
         run: npm install -g @fission-ai/openspec
+
+      - name: Install xcsift
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/xcsift" "$HOME/.local/bin"
+          gh release download v1.3.2-sunset.2 --repo SunsetWan/xcsift \
+            --pattern "xcsift-v1.3.2-sunset.2-macos-arm64.tar.gz" --dir "$RUNNER_TEMP/xcsift"
+          tar -xzf "$RUNNER_TEMP/xcsift/xcsift-v1.3.2-sunset.2-macos-arm64.tar.gz" -C "$RUNNER_TEMP/xcsift"
+          install -m 0755 "$RUNNER_TEMP/xcsift/xcsift" "$HOME/.local/bin/xcsift"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Prepare scripts
         run: chmod +x ./gradlew scripts/*.sh

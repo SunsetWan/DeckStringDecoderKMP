@@ -6,7 +6,14 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+        C0DEC0000000000000000001 /* DeckStringModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEC0000000000000000003; };
+        C0DEC0000000000000000002 /* DeckStringDecoder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0DEC0000000000000000004; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
+        C0DEC0000000000000000003 /* DeckStringModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../../swiftpm-binary/Sources/DeckStringModels/DeckStringModels.swift; sourceTree = SOURCE_ROOT; };
+        C0DEC0000000000000000004 /* DeckStringDecoder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../../swiftpm-binary/Sources/DeckStringDecoder/DeckStringDecoder.swift; sourceTree = SOURCE_ROOT; };
 		CB7919BE2FBA206E00DE130F /* DeckStringDecoderKMPDebugDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DeckStringDecoderKMPDebugDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -33,6 +40,8 @@
 			isa = PBXGroup;
 			children = (
 				CB7919C02FBA206E00DE130F /* DeckStringDecoderKMPDebugDemo */,
+                C0DEC0000000000000000003 /* DeckStringModels.swift */,
+                C0DEC0000000000000000004 /* DeckStringDecoder.swift */,
 				CB7919BF2FBA206E00DE130F /* Products */,
 			);
 			sourceTree = "<group>";
@@ -52,7 +61,7 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = CB7919C92FBA206E00DE130F /* Build configuration list for PBXNativeTarget "DeckStringDecoderKMPDebugDemo" */;
 			buildPhases = (
-				CB7919CC2FBA206E00DE130F /* Embed DeckStringDecoder Debug Framework */,
+				CB7919CC2FBA206E00DE130F /* Embed DeckStringRuntime Debug Framework */,
 				CB7919BA2FBA206E00DE130F /* Sources */,
 				CB7919BB2FBA206E00DE130F /* Frameworks */,
 				CB7919BC2FBA206E00DE130F /* Resources */,
@@ -116,7 +125,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		CB7919CC2FBA206E00DE130F /* Embed DeckStringDecoder Debug Framework */ = {
+		CB7919CC2FBA206E00DE130F /* Embed DeckStringRuntime Debug Framework */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -126,7 +135,7 @@
 			);
 			inputPaths = (
 			);
-			name = "Embed DeckStringDecoder Debug Framework";
+			name = "Embed DeckStringRuntime Debug Framework";
 			outputFileListPaths = (
 			);
 			outputPaths = (
@@ -142,6 +151,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+                C0DEC0000000000000000001 /* DeckStringModels.swift in Sources */,
+                C0DEC0000000000000000002 /* DeckStringDecoder.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -298,13 +309,13 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
-					DeckStringDecoder,
+					DeckStringRuntime,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sunset.learn.2026.DeckStringDecoderKMPDebugDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DECKSTRING_INTEGRATED_DEBUG";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -341,13 +352,13 @@
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-framework",
-					DeckStringDecoder,
+					DeckStringRuntime,
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.sunset.learn.2026.DeckStringDecoderKMPDebugDemo;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DECKSTRING_INTEGRATED_DEBUG";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
